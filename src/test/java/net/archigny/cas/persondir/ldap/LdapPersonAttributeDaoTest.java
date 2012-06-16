@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
+import net.archigny.cas.persondir.processors.AddTodayDateProcessor;
+import net.archigny.cas.persondir.processors.IAttributesProcessor;
+
 import org.jasig.services.persondir.IPersonAttributes;
 import org.junit.Before;
 import org.junit.Test;
@@ -194,6 +197,95 @@ public class LdapPersonAttributeDaoTest {
 
     }
 
-    // TODO : test ldapFilters, processors
+    @Test
+    public void getPersonWithEmail() {
+        log.info("Test : getPersonWithEmail() - test ldapfilter + mapping");
+
+        LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
+        ldapDAO.setContextSource(ldapCS);
+        ldapDAO.setBaseDN(BASE_DN);
+        
+        ArrayList<String> rawAttrs = new ArrayList<String>(3);
+        rawAttrs.add("cn");
+        rawAttrs.add("sn");
+        rawAttrs.add("uid");
+        rawAttrs.add("memberOf");
+        ldapDAO.setQueriedAttributes(rawAttrs);
+
+        HashMap<String, String> mapping = new HashMap<String, String>();
+        mapping.put("sn", "nom");
+        mapping.put("cn", "nomCommun");
+        mapping.put("givenname", "prenom");
+        ldapDAO.setResultAttributeMapping(mapping);
+
+        ldapDAO.setLdapFilter("mail={0}");
+        
+        try {
+            ldapDAO.afterPropertiesSet();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception levée au AfterPropertiesSet");
+        }
+        
+        IPersonAttributes personAttributes = ldapDAO.getPerson("scroche@test.archigny.net");
+        System.out.println(personAttributes);
+        assertNotNull(personAttributes);
+        assertEquals("Sarah", personAttributes.getAttributeValue("prenom"));
+        assertEquals("Croche", personAttributes.getAttributeValue("nom"));
+        assertEquals("scroche", personAttributes.getAttributeValue("uid"));
+    }
+    
+    @Test
+    public void oneProcessor() {
+        log.info("Test : oneProcessor() - test mapping + 1 processor");
+
+        LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
+        ldapDAO.setContextSource(ldapCS);
+        ldapDAO.setBaseDN(BASE_DN);
+        
+        ArrayList<String> rawAttrs = new ArrayList<String>();
+        rawAttrs.add("cn");
+        rawAttrs.add("sn");
+        rawAttrs.add("uid");
+        ldapDAO.setQueriedAttributes(rawAttrs);
+        
+        HashMap<String, String> mapping = new HashMap<String, String>();
+        mapping.put("sn", "nom");
+        mapping.put("cn", "nomCommun");
+        mapping.put("givenName", "prenom");
+        mapping.put("memberOf", "groupe");
+        ldapDAO.setResultAttributeMapping(mapping);
+
+        ArrayList<IAttributesProcessor> processors = new ArrayList<IAttributesProcessor>(1);
+        processors.add(new AddTodayDateProcessor());
+        
+        ldapDAO.setProcessors(processors);
+        
+        try {
+            ldapDAO.afterPropertiesSet();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception levée au AfterPropertiesSet");
+        }
+        
+        Set<String> attrs = ldapDAO.getPossibleUserAttributeNames();
+
+        System.out.println(attrs);
+        assertTrue(attrs.contains(AddTodayDateProcessor.DATE_ATTRIBUTE_NAME));
+        assertTrue(attrs.contains("uid"));
+        assertTrue(attrs.contains("nom"));
+        assertTrue(attrs.contains("prenom"));
+        assertTrue(attrs.contains("groupe"));
+        assertTrue(attrs.contains("nomCommun"));
+        assertEquals(6, attrs.size());
+        
+        IPersonAttributes personAttributes = ldapDAO.getPerson("ghouse");
+        System.out.println(personAttributes);
+        assertNotNull(personAttributes);
+        assertNotNull(personAttributes.getAttributeValue(AddTodayDateProcessor.DATE_ATTRIBUTE_NAME));
+        assertEquals("Gregory", personAttributes.getAttributeValue("prenom"));
+        assertEquals("House", personAttributes.getAttributeValue("nom"));
+        assertEquals("ghouse", personAttributes.getAttributeValue("uid"));
+    }
     
 }

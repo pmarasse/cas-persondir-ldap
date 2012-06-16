@@ -29,54 +29,54 @@ import org.springframework.ldap.core.LdapTemplate;
 
 public class LdapPersonAttributeDao implements IPersonAttributeDao, InitializingBean {
 
-    final Logger                  log                    = LoggerFactory.getLogger(LdapPersonAttributeDao.class);
+    final Logger                         log                    = LoggerFactory.getLogger(LdapPersonAttributeDao.class);
 
-    final static Pattern          QUERY_PLACEHOLDER      = Pattern.compile("\\{0\\}");
+    final static Pattern                 QUERY_PLACEHOLDER      = Pattern.compile("\\{0\\}");
 
     /**
      * LDAP Context Source used to query the directory
      */
-    protected ContextSource       contextSource;
+    protected ContextSource              contextSource;
 
     /**
      * Simple mapping from LDAP Attribute names (keys), to expected Attribute names (values)
      */
-    protected Map<String, String> resultAttributeMapping = new HashMap<String, String>();
+    protected Map<String, String>        resultAttributeMapping = new HashMap<String, String>();
 
     /**
      * ldapFilter used to retrieve one person.
      */
-    protected String              ldapFilter             = "(uid={0})";
+    protected String                     ldapFilter             = "(uid={0})";
 
     /**
      * Base DN for LDAP query
      */
-    protected String              baseDN                 = "";
+    protected String                     baseDN                 = "";
 
     /**
      * List of queried attributes (usually not mapped)
      */
-    protected List<String>        queriedAttributes      = new ArrayList<String>();
+    protected List<String>               queriedAttributes      = new ArrayList<String>();
 
     /**
      * Ldap template used to query the directory
      */
-    private LdapTemplate          ldapTemplate;
+    private LdapTemplate                 ldapTemplate;
 
     /**
      * Ldap Search controls used internally
      */
-    private SearchControls        sc                     = new SearchControls();
+    private SearchControls               sc                     = new SearchControls();
 
     /**
      * Set of attributes to query (mapped and raw attributes) used internally
      */
-    private HashSet<String>       queriedAttributesSet;
+    private HashSet<String>              queriedAttributesSet;
 
     /**
      * List of attributes processors
      */
-    List<IAttributesProcessor>     processors             = new ArrayList<IAttributesProcessor>();
+    protected List<IAttributesProcessor> processors             = new ArrayList<IAttributesProcessor>();
 
     // Implements InitializingBean
 
@@ -101,10 +101,10 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
             attrs[i++] = attribute;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Attributes queried : " + Arrays.toString(attrs));
-        }
         sc.setReturningAttributes(attrs);
+        if (log.isDebugEnabled()) {
+            log.debug("afterPropertiesSet, set attributes to be queried : " + Arrays.toString(attrs));
+        }
 
     }
 
@@ -117,7 +117,8 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         String localFilter = queryMatcher.replaceAll(uid);
 
         if (log.isDebugEnabled()) {
-            log.debug("SearchFilter : " + localFilter);
+            log.debug("getPerson SearchFilter : " + localFilter);
+            log.debug("getPerson Attributes queried : " + Arrays.toString(sc.getReturningAttributes()));
         }
 
         try {
@@ -127,7 +128,15 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
             if (resultList.isEmpty()) {
                 return null;
             }
-            return resultList.get(0);
+            IPersonAttributes result = resultList.get(0);
+            if (result != null) {
+                Map<String, List<Object>> attrs = result.getAttributes();
+                for (IAttributesProcessor processor : processors) {
+                    processor.processAttributes(attrs);
+                }
+            }
+
+            return result;
 
         } catch (NameNotFoundException e) {
             if (log.isDebugEnabled()) {
@@ -165,7 +174,10 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         String sourceAttributeName;
         String targetAttributeName;
 
-        Iterator<String> iter = queriedAttributesSet.iterator();
+        HashSet<String> sourceAttributeSet = new HashSet<String>();
+        sourceAttributeSet.addAll(queriedAttributesSet);
+
+        Iterator<String> iter = sourceAttributeSet.iterator();
 
         Set<String> attributesToReturn = new HashSet<String>();
 
@@ -182,7 +194,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         for (IAttributesProcessor processor : processors) {
             attributesToReturn.addAll(processor.getPossibleUserAttributeNames());
         }
-        
+
         return attributesToReturn;
 
     }
@@ -340,11 +352,18 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         public Object mapFromContext(Object ctx) {
 
             DirContextAdapter context = (DirContextAdapter) ctx;
+            if (log.isDebugEnabled()) {
+                log.debug("Attributes returned by context : " + context.getAttributes().toString());
+                log.debug("Processing queried attributes : " + Arrays.toString(queriedAttributesSet.toArray()));
+            }
             Map<String, List<Object>> personAttrsMap = new HashMap<String, List<Object>>();
             String targetAttribute;
 
             for (String attribute : queriedAttributesSet) {
                 Object[] values = context.getObjectAttributes(attribute);
+                if (log.isDebugEnabled()) {
+                    log.debug("Attribute : " + attribute + " values : " + Arrays.toString(values));
+                }
                 if (values != null) {
                     if ((targetAttribute = resultAttributeMapping.get(attribute)) == null) {
                         personAttrsMap.put(attribute, Arrays.asList(values));
