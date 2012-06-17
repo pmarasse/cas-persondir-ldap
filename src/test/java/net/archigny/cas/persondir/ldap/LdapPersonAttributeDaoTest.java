@@ -236,7 +236,7 @@ public class LdapPersonAttributeDaoTest {
     }
     
     @Test
-    public void oneProcessor() {
+    public void testOneProcessor() {
         log.info("Test : oneProcessor() - test mapping + 1 processor");
 
         LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();

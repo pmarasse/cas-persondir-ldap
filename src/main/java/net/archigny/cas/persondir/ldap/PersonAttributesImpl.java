@@ -4,10 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.jasig.services.persondir.IPersonAttributes;
-
-public class PersonAttributesImpl implements IPersonAttributes {
+public class PersonAttributesImpl implements ILockablePersonAttributes {
 
     private static final long         serialVersionUID = 1821405503021254743L;
 
@@ -33,19 +32,33 @@ public class PersonAttributesImpl implements IPersonAttributes {
         this.attributes = attributes;
     }
 
+    // Implementation of ILockablePersonAttributes
+
     /**
      * Transforms attributes collection to an unmodfiable collection
      */
+    @Override
     public void lock() {
 
         if (!locked) {
+            // Lock Every collection of attribute values
+            Set<String> attrNames = attributes.keySet();
+            for (String attrName : attrNames) {
+                List<Object> attrValues = attributes.get(attrName);
+                attributes.put(attrName,Collections.unmodifiableList(attrValues));
+            }
+            // Finally lock the main collection
             attributes = Collections.unmodifiableMap(attributes);
             locked = true;
         }
 
     }
 
-    // Implementation of IPersonAttributes
+    @Override
+    public boolean isLocked() {
+    
+        return locked;
+    }
 
     @Override
     public String getName() {
@@ -87,12 +100,6 @@ public class PersonAttributesImpl implements IPersonAttributes {
     public void setAttributes(Map<String, List<Object>> attributes) {
 
         this.attributes = attributes;
-    }
-
-    
-    public boolean isLocked() {
-    
-        return locked;
     }
 
     @Override

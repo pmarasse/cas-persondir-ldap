@@ -111,7 +111,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     // Implements IPersonAttributeDao Interface
 
     @Override
-    public IPersonAttributes getPerson(String uid) {
+    public ILockablePersonAttributes getPerson(String uid) {
 
         Matcher queryMatcher = QUERY_PLACEHOLDER.matcher(ldapFilter);
         String localFilter = queryMatcher.replaceAll(uid);
@@ -122,20 +122,23 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
 
         try {
+            // Fetch person from directory
             @SuppressWarnings("unchecked")
-            List<IPersonAttributes> resultList = ldapTemplate.search(baseDN, localFilter, sc, new PersonAttributeMapper(uid));
+            List<ILockablePersonAttributes> resultList = ldapTemplate.search(baseDN, localFilter, sc, new PersonAttributeMapper(uid));
 
             if (resultList.isEmpty()) {
                 return null;
             }
-            IPersonAttributes result = resultList.get(0);
+            // Process attributes if needed
+            ILockablePersonAttributes result = resultList.get(0);
             if (result != null) {
                 Map<String, List<Object>> attrs = result.getAttributes();
                 for (IAttributesProcessor processor : processors) {
                     processor.processAttributes(attrs);
                 }
             }
-
+            // Lock the result before returning it
+            result.lock();
             return result;
 
         } catch (NameNotFoundException e) {
