@@ -20,7 +20,7 @@ public interface IAttributesProcessor {
 
 	/**
 	 * Get the set of attributes added by this processor
-	 * @return
+	 * @return Set of the attrbites names that can be added by the processor
 	 */
 	public Set<String> getPossibleUserAttributeNames();
 	
