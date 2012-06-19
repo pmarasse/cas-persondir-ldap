@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>archigny.net</groupId>
     <artifactId>cas.persondir.ldap</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>Ldap Person Directory for Jasig CAS</name>
 
     <properties>
@@ -69,6 +69,7 @@
                     </execution>
                 </executions>
             </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -82,6 +83,7 @@
                     </execution>
                 </executions>
             </plugin>
+            
         </plugins>
         <extensions>
 
@@ -92,19 +94,24 @@
             </extension>
         </extensions>
     </build>
+    
     <distributionManagement>
+    
         <repository>
-            <id>local-released</id>
+            <id>orthanc-released</id>
             <name>Dépôt local releases</name>
-            <url>file:///tmp/maven2/perso-released</url>
+            <url>scp://orthanc.archigny.net/data/orthanc/maven2/released</url>
         </repository>
+        
         <snapshotRepository>
             <id>local-snapshot</id>
             <name>Dépôt local snapshots</name>
-            <url>file:///tmp/maven2/perso-snapshot</url>
+            <url>file:///tmp/maven2/snapshot</url>
             <uniqueVersion>true</uniqueVersion>
         </snapshotRepository>
+        
     </distributionManagement>
+    
     <repositories>
         <repository>
             <id>spring-release</id>
