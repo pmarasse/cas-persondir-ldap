@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.archigny.cas.persondir.processors.AddTodayDateProcessor;
@@ -236,7 +238,7 @@ public class LdapPersonAttributeDaoTest {
     }
     
     @Test
-    public void testOneProcessor() {
+    public void testTwoProcessors() {
         log.info("Test : oneProcessor() - test mapping + 1 processor");
 
         LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
@@ -267,6 +269,21 @@ public class LdapPersonAttributeDaoTest {
             e.printStackTrace();
             fail("Exception levée au AfterPropertiesSet");
         }
+        
+        // Bugfix : returning null by getPossibleUserAttributeNames throwed nullPointerException
+        processors.add(new IAttributesProcessor() {
+            
+            @Override
+            public void processAttributes(Map<String, List<Object>> attributes) {
+                       
+            }
+            
+            @Override
+            public Set<String> getPossibleUserAttributeNames() {
+        
+                return null;
+            }
+        });
         
         Set<String> attrs = ldapDAO.getPossibleUserAttributeNames();
 

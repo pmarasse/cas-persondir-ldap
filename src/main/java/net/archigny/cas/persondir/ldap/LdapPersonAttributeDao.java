@@ -124,7 +124,8 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         try {
             // Fetch person from directory
             @SuppressWarnings("unchecked")
-            List<ILockablePersonAttributes> resultList = ldapTemplate.search(baseDN, localFilter, sc, new PersonAttributeMapper(uid));
+            List<ILockablePersonAttributes> resultList = ldapTemplate.search(baseDN, localFilter, sc,
+                    new PersonAttributeMapper(uid));
 
             if (resultList.isEmpty()) {
                 return null;
@@ -150,7 +151,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     }
 
     /**
-     * As this implementation does not support parametrized query other than
+     * As this implementation does not support parametrized query other than simple ldap filter
      */
     @Override
     public Set<IPersonAttributes> getPeople(Map<String, Object> query) {
@@ -177,28 +178,33 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         String sourceAttributeName;
         String targetAttributeName;
 
-        HashSet<String> sourceAttributeSet = new HashSet<String>();
-        sourceAttributeSet.addAll(queriedAttributesSet);
+        Iterator<String> iter = queriedAttributesSet.iterator();
 
-        Iterator<String> iter = sourceAttributeSet.iterator();
-
-        Set<String> attributesToReturn = new HashSet<String>();
+        Set<String> possibleAttributenames = new HashSet<String>();
 
         while (iter.hasNext()) {
             sourceAttributeName = iter.next();
             if ((targetAttributeName = resultAttributeMapping.get(sourceAttributeName)) != null) {
-                iter.remove();
-                attributesToReturn.add(targetAttributeName);
+                possibleAttributenames.add(targetAttributeName);
             } else {
-                attributesToReturn.add(sourceAttributeName);
+                possibleAttributenames.add(sourceAttributeName);
             }
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("possible AttributeNames Set before processors : " + Arrays.toString(possibleAttributenames.toArray()));
+        }
         for (IAttributesProcessor processor : processors) {
-            attributesToReturn.addAll(processor.getPossibleUserAttributeNames());
+            Set<String> processorAttributeNames = processor.getPossibleUserAttributeNames();
+            if (processorAttributeNames != null) {
+                possibleAttributenames.addAll(processorAttributeNames);
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("returning AttributeNames Set : " + Arrays.toString(possibleAttributenames.toArray()));
         }
 
-        return attributesToReturn;
+        return possibleAttributenames;
 
     }
 
