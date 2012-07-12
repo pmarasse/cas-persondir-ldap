@@ -1,6 +1,7 @@
 package net.archigny.cas.persondir.processors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,16 +11,21 @@ public class PersonAttributesSetup {
 
     public static Map<String,List<Object>> getPersonAttributes() {
         Map<String,List<Object>> attributes = new HashMap<String, List<Object>>();
+        
+        Object[] valGN = { "Philippe" };
+        Object[] valSN = { "Marasse" };
+        Object[] valCN = { "Philippe Marasse" };
+        
         List<Object> values = new ArrayList<Object>();
-        values.add("Philippe");
+        values.addAll(Arrays.asList(valGN));
         attributes.put("givenName", values);
 
         values = new ArrayList<Object>();
-        values.add("Marasse");
+        values.addAll(Arrays.asList(valSN));
         attributes.put("sn", values);
         
         values = new ArrayList<Object>();
-        values.add("Philippe Marasse");
+        values.addAll(Arrays.asList(valCN));
         attributes.put("cn", values);
         
         values = new ArrayList<Object>();

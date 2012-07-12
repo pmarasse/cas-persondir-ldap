@@ -1,5 +1,6 @@
 package net.archigny.cas.persondir.processors;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,15 +24,13 @@ import org.springframework.beans.factory.InitializingBean;
  * @author philippe
  * 
  */
-public class RegexValueReplace implements IAttributesProcessor, InitializingBean {
+public class RegexValueDelete implements IAttributesProcessor, InitializingBean {
 
-    private Logger  log           = LoggerFactory.getLogger(RegexValueReplace.class);
+    private Logger  log           = LoggerFactory.getLogger(RegexValueDelete.class);
 
     private String  key;
 
     private String  valueMatch;
-
-    private String  valueReplace;
 
     private boolean caseSensitive = true;
 
@@ -47,14 +46,30 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
             }
             if (attributeName.equalsIgnoreCase(key)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Attribute found, applying value replacements");
+                    log.debug("Attribute found, searching values to delete");
                 }
                 List<Object> values = attributes.get(attributeName);
+                List<Object> valuesToDelete = new ArrayList<Object>();
+
                 int size = values.size();
                 for (int i = 0; i < size; i++) {
                     Object value = values.get(i);
                     if (value instanceof String) {
-                        values.set(i, valuePattern.matcher(((String) value)).replaceAll(valueReplace));
+                        if (valuePattern.matcher(((String) value)).matches()) {
+                            valuesToDelete.add(value);
+                        }
+                    }
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug(valuesToDelete.size() + " values found to be deleted");
+                }
+                if (!valuesToDelete.isEmpty()) {
+                    try {
+                        values.removeAll(valuesToDelete);
+                    } catch (UnsupportedOperationException e) {
+                        for (Object valueToDelete : valuesToDelete) {
+                            values.remove(valueToDelete);
+                        }
                     }
                 }
                 break;
@@ -85,9 +100,6 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
         if (valueMatch == null) {
             throw new BeanCreationException("attrMatch cannot be null");
         }
-        if (valueReplace == null) {
-            throw new BeanCreationException("attrReplace cannot be null");
-        }
         // Validate pattern.
         if (caseSensitive) {
             valuePattern = Pattern.compile(valueMatch);
@@ -95,8 +107,7 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
             valuePattern = Pattern.compile(valueMatch, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
         }
         if (log.isDebugEnabled()) {
-            log.debug("Configured to match attribute name : [" + key + "] / values match [" + valueMatch + "] replacement : ["
-                    + valueReplace + "]");
+            log.debug("Configured for attribute name : [" + key + "] / values match [" + valueMatch + "] ");
         }
 
     }
@@ -121,16 +132,6 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
     public void setValueMatch(String valueMatch) {
 
         this.valueMatch = valueMatch;
-    }
-
-    public String getValueReplace() {
-
-        return valueReplace;
-    }
-
-    public void setValueReplace(String valueReplace) {
-
-        this.valueReplace = valueReplace;
     }
 
     public boolean isCaseSensitive() {

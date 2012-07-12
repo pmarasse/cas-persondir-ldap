@@ -367,6 +367,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
             }
             Map<String, List<Object>> personAttrsMap = new HashMap<String, List<Object>>();
             String targetAttribute;
+            List<Object> valuesToAdd;
 
             for (String attribute : queriedAttributesSet) {
                 Object[] values = context.getObjectAttributes(attribute);
@@ -374,10 +375,12 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
                     log.debug("Attribute : " + attribute + " values : " + Arrays.toString(values));
                 }
                 if (values != null) {
+                    valuesToAdd = new ArrayList<Object>();
+                    valuesToAdd.addAll(Arrays.asList(values));
                     if ((targetAttribute = resultAttributeMapping.get(attribute)) == null) {
-                        personAttrsMap.put(attribute, Arrays.asList(values));
+                        personAttrsMap.put(attribute, valuesToAdd);
                     } else {
-                        personAttrsMap.put(targetAttribute, Arrays.asList(values));
+                        personAttrsMap.put(targetAttribute, valuesToAdd);
                     }
                 }
             }
