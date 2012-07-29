@@ -11,7 +11,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.naming.InvalidNameException;
 import javax.naming.directory.SearchControls;
+import javax.naming.ldap.LdapName;
 
 import net.archigny.cas.persondir.processors.IAttributesProcessor;
 
@@ -25,38 +27,40 @@ import org.springframework.ldap.NameNotFoundException;
 import org.springframework.ldap.core.ContextMapper;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.DirContextAdapter;
+import org.springframework.ldap.core.DistinguishedName;
 import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.ldap.core.support.LdapContextSource;
 
 public class LdapPersonAttributeDao implements IPersonAttributeDao, InitializingBean {
 
-    final Logger                         log                    = LoggerFactory.getLogger(LdapPersonAttributeDao.class);
+    private final Logger                 log                          = LoggerFactory.getLogger(LdapPersonAttributeDao.class);
 
-    final static Pattern                 QUERY_PLACEHOLDER      = Pattern.compile("\\{0\\}");
+    protected final static Pattern       QUERY_PLACEHOLDER            = Pattern.compile("\\{0\\}");
 
     /**
      * LDAP Context Source used to query the directory
      */
-    protected ContextSource              contextSource;
+    protected LdapContextSource          contextSource;
 
     /**
      * Simple mapping from LDAP Attribute names (keys), to expected Attribute names (values)
      */
-    protected Map<String, String>        resultAttributeMapping = new HashMap<String, String>();
+    protected Map<String, String>        resultAttributeMapping       = new HashMap<String, String>();
 
     /**
      * ldapFilter used to retrieve one person.
      */
-    protected String                     ldapFilter             = "(uid={0})";
+    protected String                     ldapFilter                   = "(uid={0})";
 
     /**
      * Base DN for LDAP query
      */
-    protected String                     baseDN                 = "";
+    protected LdapName                   baseDN;
 
     /**
      * List of queried attributes (usually not mapped)
      */
-    protected List<String>               queriedAttributes      = new ArrayList<String>();
+    protected List<String>               queriedAttributes            = new ArrayList<String>();
 
     /**
      * Ldap template used to query the directory
@@ -66,7 +70,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     /**
      * Ldap Search controls used internally
      */
-    private SearchControls               sc                     = new SearchControls();
+    private SearchControls               sc                           = new SearchControls();
 
     /**
      * Set of attributes to query (mapped and raw attributes) used internally
@@ -76,7 +80,17 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     /**
      * List of attributes processors
      */
-    protected List<IAttributesProcessor> processors             = new ArrayList<IAttributesProcessor>();
+    protected List<IAttributesProcessor> processors                   = new ArrayList<IAttributesProcessor>();
+
+    /**
+     * Flag set for PartialResultException that can be raised when querying AD with its root DN as base
+     */
+    private boolean                      ignorePartialResultException = true;
+
+    /**
+     * Name of the attribute used to store the Distinguished Name (null => no storage)
+     */
+    private String                       dnAttributeName;
 
     // Implements InitializingBean
 
@@ -87,6 +101,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
             throw new BeanCreationException("LDAP contextSource cannot be null");
         }
         ldapTemplate = new LdapTemplate(contextSource);
+        ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         sc.setReturningObjFlag(true);
 
@@ -103,7 +118,14 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
 
         sc.setReturningAttributes(attrs);
         if (log.isDebugEnabled()) {
-            log.debug("afterPropertiesSet, set attributes to be queried : " + Arrays.toString(attrs));
+            log.debug("afterPropertiesSet, set attributes to be queried : "
+                    + Arrays.toString(attrs)
+                    + (dnAttributeName == null ? ", no DN attribute created" : ", will add attribute [" + dnAttributeName
+                            + "] to store user DN"));
+        }
+
+        if (baseDN == null) {
+            baseDN = new LdapName("");
         }
 
     }
@@ -200,6 +222,14 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
                 possibleAttributenames.addAll(processorAttributeNames);
             }
         }
+        if (dnAttributeName != null) {
+            if (possibleAttributenames.contains(dnAttributeName)) {
+                log.warn("dnAttributeName collides with existing attribute in queriedAttributes, resultAttributeMapping or processor");
+            } else {
+                possibleAttributenames.add(dnAttributeName);
+            }
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("returning AttributeNames Set : " + Arrays.toString(possibleAttributenames.toArray()));
         }
@@ -264,7 +294,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return contextSource;
     }
 
-    public void setContextSource(ContextSource contextSource) {
+    public void setContextSource(LdapContextSource contextSource) {
 
         if (contextSource == null) {
             throw new IllegalArgumentException("contextSource cannot be null");
@@ -301,9 +331,10 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         this.ldapFilter = ldapFilter;
     }
 
+    // Wrapper getter around LdapName
     public String getBaseDN() {
 
-        return baseDN;
+        return (baseDN == null ? "" : baseDN.toString());
     }
 
     public void setBaseDN(String baseDN) {
@@ -311,8 +342,12 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         if (baseDN == null) {
             throw new IllegalArgumentException("baseDN cannot be null");
         }
+        try {
+            this.baseDN = new LdapName(baseDN);
+        } catch (InvalidNameException e) {
+            throw new IllegalArgumentException(e);
+        }
 
-        this.baseDN = baseDN;
     }
 
     public List<String> getQueriedAttributes() {
@@ -342,6 +377,26 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         this.processors = processors;
     }
 
+    public String getDnAttributeName() {
+
+        return dnAttributeName;
+    }
+
+    public void setDnAttributeName(String dnAttributeName) {
+
+        this.dnAttributeName = dnAttributeName;
+    }
+
+    public boolean isIgnorePartialResultException() {
+
+        return ignorePartialResultException;
+    }
+
+    public void setIgnorePartialResultException(boolean ignorePartialResultException) {
+
+        this.ignorePartialResultException = ignorePartialResultException;
+    }
+
     /**
      * Private DAO class which creates personAttributes from LDAP response
      * 
@@ -368,6 +423,36 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
             Map<String, List<Object>> personAttrsMap = new HashMap<String, List<Object>>();
             String targetAttribute;
             List<Object> valuesToAdd;
+
+            if (dnAttributeName != null) {
+
+                DistinguishedName objectDN = new DistinguishedName(contextSource.getBaseLdapPath());
+                String objectDNString;
+
+                if (objectDN.isEmpty()) {
+
+                    objectDNString = context.getDn().toString();
+                } else {
+                    try {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Trying to add " + context.getDn().toString() + " to " + objectDN.toString());
+                        }
+                        objectDN.addAll(context.getDn());
+                        objectDNString = objectDN.toString();
+                    } catch (InvalidNameException e) {
+                        // Unexpected... in this case, return only context DN
+                        objectDNString = context.getDn().toString();
+                    }
+                }
+
+                if (log.isDebugEnabled()) {
+                    log.debug("Adding computed DN attribute name [" + dnAttributeName + "], value [" + objectDNString + "]");
+                }
+
+                List<Object> valuesDN = new ArrayList<Object>(1);
+                valuesDN.add(objectDNString);
+                personAttrsMap.put(dnAttributeName, valuesDN);
+            }
 
             for (String attribute : queriedAttributesSet) {
                 Object[] values = context.getObjectAttributes(attribute);

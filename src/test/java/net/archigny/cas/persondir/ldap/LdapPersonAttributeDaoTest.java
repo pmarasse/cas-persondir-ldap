@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+
 import net.archigny.cas.persondir.processors.AddTodayDateProcessor;
 import net.archigny.cas.persondir.processors.IAttributesProcessor;
 
@@ -26,6 +29,8 @@ public class LdapPersonAttributeDaoTest {
 
     public final static String BASE_DN = "ou=comptes,dc=test,dc=archigny,dc=net";
 
+    public final static String DN_ATTR = "userDn";
+
     @Before
     public void setUp() throws Exception {
 
@@ -42,7 +47,7 @@ public class LdapPersonAttributeDaoTest {
 
         log.info("Test : baseTest()");
         LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
-        
+
         try {
             ldapDAO.setBaseDN(null);
             fail("Exception non levée setBaseDN null");
@@ -74,14 +79,13 @@ public class LdapPersonAttributeDaoTest {
             fail("Exception non levée setResultAttributeMapping null");
         } catch (Exception e) {
         }
-        
-        
+
         try {
             ldapDAO.afterPropertiesSet();
             fail("Exception non levée au AfterPropertiesSet alors que le contextSource n'est pas fourni");
         } catch (Exception e) {
         }
-        
+
         ldapDAO.setContextSource(ldapCS);
         try {
             ldapDAO.afterPropertiesSet();
@@ -89,7 +93,7 @@ public class LdapPersonAttributeDaoTest {
             e.printStackTrace();
             fail("Exception levée au AfterPropertiesSet avec ContextSource fixée ??");
         }
-        
+
         IPersonAttributes result = ldapDAO.getPerson("inexistent-uid");
         assertNull(result);
     }
@@ -201,12 +205,13 @@ public class LdapPersonAttributeDaoTest {
 
     @Test
     public void getPersonWithEmail() {
+
         log.info("Test : getPersonWithEmail() - test ldapfilter + mapping");
 
         LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
         ldapDAO.setContextSource(ldapCS);
         ldapDAO.setBaseDN(BASE_DN);
-        
+
         ArrayList<String> rawAttrs = new ArrayList<String>(3);
         rawAttrs.add("cn");
         rawAttrs.add("sn");
@@ -221,14 +226,14 @@ public class LdapPersonAttributeDaoTest {
         ldapDAO.setResultAttributeMapping(mapping);
 
         ldapDAO.setLdapFilter("mail={0}");
-        
+
         try {
             ldapDAO.afterPropertiesSet();
         } catch (Exception e) {
             e.printStackTrace();
             fail("Exception levée au AfterPropertiesSet");
         }
-        
+
         IPersonAttributes personAttributes = ldapDAO.getPerson("scroche@test.archigny.net");
         System.out.println(personAttributes);
         assertNotNull(personAttributes);
@@ -236,21 +241,22 @@ public class LdapPersonAttributeDaoTest {
         assertEquals("Croche", personAttributes.getAttributeValue("nom"));
         assertEquals("scroche", personAttributes.getAttributeValue("uid"));
     }
-    
+
     @Test
     public void testTwoProcessors() {
+
         log.info("Test : oneProcessor() - test mapping + 1 processor");
 
         LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
         ldapDAO.setContextSource(ldapCS);
         ldapDAO.setBaseDN(BASE_DN);
-        
+
         ArrayList<String> rawAttrs = new ArrayList<String>();
         rawAttrs.add("cn");
         rawAttrs.add("sn");
         rawAttrs.add("uid");
         ldapDAO.setQueriedAttributes(rawAttrs);
-        
+
         HashMap<String, String> mapping = new HashMap<String, String>();
         mapping.put("sn", "nom");
         mapping.put("cn", "nomCommun");
@@ -260,31 +266,31 @@ public class LdapPersonAttributeDaoTest {
 
         ArrayList<IAttributesProcessor> processors = new ArrayList<IAttributesProcessor>(1);
         processors.add(new AddTodayDateProcessor());
-        
+
         ldapDAO.setProcessors(processors);
-        
+
         try {
             ldapDAO.afterPropertiesSet();
         } catch (Exception e) {
             e.printStackTrace();
             fail("Exception levée au AfterPropertiesSet");
         }
-        
+
         // Bugfix : returning null by getPossibleUserAttributeNames throwed nullPointerException
         processors.add(new IAttributesProcessor() {
-            
+
             @Override
             public void processAttributes(Map<String, List<Object>> attributes) {
-                       
+
             }
-            
+
             @Override
             public Set<String> getPossibleUserAttributeNames() {
-        
+
                 return null;
             }
         });
-        
+
         Set<String> attrs = ldapDAO.getPossibleUserAttributeNames();
 
         System.out.println(attrs);
@@ -295,7 +301,7 @@ public class LdapPersonAttributeDaoTest {
         assertTrue(attrs.contains("groupe"));
         assertTrue(attrs.contains("nomCommun"));
         assertEquals(6, attrs.size());
-        
+
         IPersonAttributes personAttributes = ldapDAO.getPerson("ghouse");
         System.out.println(personAttributes);
         assertNotNull(personAttributes);
@@ -304,5 +310,55 @@ public class LdapPersonAttributeDaoTest {
         assertEquals("House", personAttributes.getAttributeValue("nom"));
         assertEquals("ghouse", personAttributes.getAttributeValue("uid"));
     }
-    
+
+    @Test
+    public void DnAttributeTest() {
+
+        log.info("DnAttributeTest : adding user DN in attributes");
+        
+        LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
+        ldapDAO.setContextSource(ldapCS);
+        ldapDAO.setBaseDN(BASE_DN);
+
+        ArrayList<String> rawAttrs = new ArrayList<String>();
+        rawAttrs.add("cn");
+        rawAttrs.add("sn");
+        rawAttrs.add("uid");
+        ldapDAO.setQueriedAttributes(rawAttrs);
+
+        ldapDAO.setDnAttributeName(DN_ATTR);
+
+        try {
+            ldapDAO.afterPropertiesSet();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception levée au AfterPropertiesSet");
+        }
+
+        Set<String> attrs = ldapDAO.getPossibleUserAttributeNames();
+        assertEquals(4, attrs.size());
+        assertTrue(attrs.contains("uid"));
+        assertTrue(attrs.contains("cn"));
+        assertTrue(attrs.contains("sn"));
+        assertTrue(attrs.contains(DN_ATTR));
+        
+        IPersonAttributes personAttributes = ldapDAO.getPerson("ghouse");
+        System.out.println(personAttributes);
+        assertNotNull(personAttributes);
+        
+        assertEquals("House", personAttributes.getAttributeValue("sn"));
+        assertEquals("ghouse", personAttributes.getAttributeValue("uid"));
+
+        try {
+            LdapName expectedDN = new LdapName("cn=Gregory House,ou=Comptes,dc=test,dc=archigny,dc=net");
+            LdapName actualDN = new LdapName((String) personAttributes.getAttributeValue(DN_ATTR));
+            assertEquals(expectedDN, actualDN);
+        } catch (InvalidNameException e) {
+            e.printStackTrace();
+            fail("Exception levée à la création d'un des LdapName ???");
+        }
+        
+        
+    }
+
 }
