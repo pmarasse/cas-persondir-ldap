@@ -7,6 +7,9 @@
             <param name="ConversionPattern" value="%d{ISO8601} %-5p [%C{1}] %m%n" />
         </layout>
     </appender>
+    <logger class="org.springframework">
+        <level value="INFO" />
+    </logger>
     <root>
         <level value="DEBUG" />
         <appender-ref ref="DefaultLog" />

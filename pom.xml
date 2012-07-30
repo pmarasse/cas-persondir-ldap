@@ -7,6 +7,7 @@
     <name>Ldap Person Directory for Jasig CAS</name>
 
     <properties>
+        <commons.pool.version>1.5.4</commons.pool.version>
         <commons.codec.version>1.6</commons.codec.version>
         <junit.version>4.10</junit.version>
         
@@ -30,7 +31,13 @@
             <version>${commons.codec.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>commons-pool</groupId>
+            <artifactId>commons-pool</artifactId>
+            <version>${commons.pool.version}</version>
+            <scope>test</scope>
+        </dependency>
+        
         <dependency>
             <groupId>org.jasig.service.persondir</groupId>
             <artifactId>person-directory-api</artifactId>
