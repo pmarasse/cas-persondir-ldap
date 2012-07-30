@@ -29,7 +29,6 @@ import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.DistinguishedName;
 import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
 
 public class LdapPersonAttributeDao implements IPersonAttributeDao, InitializingBean {
 
@@ -40,8 +39,13 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     /**
      * LDAP Context Source used to query the directory
      */
-    protected LdapContextSource          contextSource;
+    protected ContextSource              contextSource;
 
+    /**
+     * base DN provided to ContextSource
+     */
+    protected LdapName 					 contextSourceBaseDN;
+    
     /**
      * Simple mapping from LDAP Attribute names (keys), to expected Attribute names (values)
      */
@@ -91,7 +95,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      * Name of the attribute used to store the Distinguished Name (null => no storage)
      */
     private String                       dnAttributeName;
-
+    
     // Implements InitializingBean
 
     @Override
@@ -100,7 +104,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         if (contextSource == null) {
             throw new BeanCreationException("LDAP contextSource cannot be null");
         }
-        ldapTemplate = new LdapTemplate(contextSource);
+        ldapTemplate = new LdapTemplate(contextSource);        
         ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         sc.setReturningObjFlag(true);
@@ -294,7 +298,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return contextSource;
     }
 
-    public void setContextSource(LdapContextSource contextSource) {
+    public void setContextSource(ContextSource contextSource) {
 
         if (contextSource == null) {
             throw new IllegalArgumentException("contextSource cannot be null");
@@ -344,6 +348,25 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
         try {
             this.baseDN = new LdapName(baseDN);
+        } catch (InvalidNameException e) {
+            throw new IllegalArgumentException(e);
+        }
+
+    }
+
+    // Wrapper getter around LdapName
+    public String getContextSourceBaseDN() {
+
+        return (contextSourceBaseDN == null ? "" : contextSourceBaseDN.toString());
+    }
+
+    public void setContextSourceBaseDN(String contextSourceBaseDN) {
+
+        if (contextSourceBaseDN == null) {
+            throw new IllegalArgumentException("contextSourceBaseDN cannot be null");
+        }
+        try {
+            this.contextSourceBaseDN = new LdapName(contextSourceBaseDN);
         } catch (InvalidNameException e) {
             throw new IllegalArgumentException(e);
         }
@@ -426,7 +449,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
 
             if (dnAttributeName != null) {
 
-                DistinguishedName objectDN = new DistinguishedName(contextSource.getBaseLdapPath());
+                DistinguishedName objectDN = new DistinguishedName(contextSourceBaseDN);
                 String objectDNString;
 
                 if (objectDN.isEmpty()) {
