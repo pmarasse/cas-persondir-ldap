@@ -19,13 +19,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.ldap.core.ContextSource;
 
 public class LdapPersonAttributeDaoTest {
 
     private Logger             log     = LoggerFactory.getLogger(LdapPersonAttributeDaoTest.class);
 
-    private LdapContextSource  ldapCS  = new LdapContextSource();
+    private ContextSource  ldapCS;
 
     public final static String BASE_DN = "ou=comptes,dc=test,dc=archigny,dc=net";
 
@@ -34,11 +36,10 @@ public class LdapPersonAttributeDaoTest {
     @Before
     public void setUp() throws Exception {
 
-        log.info("Initialise la ContextSource");
-        ldapCS.setUrl("ldap://orthanc.archigny.net/");
-        ldapCS.setUserDn("cn=proxy,dc=test,dc=archigny,dc=net");
-        ldapCS.setPassword("proxyTest");
-        ldapCS.afterPropertiesSet();
+        log.info("Initialise l'application de test à partir du XML spring");
+    	ApplicationContext testApp = new ClassPathXmlApplicationContext("app-LdapPersonAttributeDaoTest.xml");
+        ldapCS = (ContextSource) testApp.getBean("searchContextSource");
+    	
         log.info("ldapCS Initialisée");
     }
 
