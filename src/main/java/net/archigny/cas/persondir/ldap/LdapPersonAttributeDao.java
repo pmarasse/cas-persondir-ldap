@@ -96,7 +96,36 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      */
     private String                       dnAttributeName;
 
+    /**
+     * True if attribute fetching has to be done by direct reading of user DN : a first query is done to find the user DN, then a
+     * second query is done to fetch attributes. Some directories need that to fetch constructed attributes (eg: tokenGroups on
+     * Active Directory)
+     */
+    private boolean                      fetchDirectDn                = false;
+
     // Implements InitializingBean
+
+    /**
+     * "Cast" a string Set to an Array (toArray seems not to work as expected)
+     * 
+     * @param dataSet
+     *            Set to convert
+     * @return array of data
+     */
+    protected String[] stringSetToArray(Set<String> dataSet) {
+
+        if (dataSet == null) {
+            return null;
+        }
+
+        // Cast Set to String Array... cannot do this by .toArray() ??
+        String[] dataArray = new String[dataSet.size()];
+        int i = 0;
+        for (String data : dataSet) {
+            dataArray[i++] = data;
+        }
+        return dataArray;
+    }
 
     @Override
     public synchronized void afterPropertiesSet() throws Exception {
@@ -106,24 +135,26 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
         ldapTemplate = new LdapTemplate(contextSource);
         ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        sc.setReturningObjFlag(true);
 
         queriedAttributesSet = new HashSet<String>(queriedAttributes.size());
         queriedAttributesSet.addAll(queriedAttributes);
         queriedAttributesSet.addAll(resultAttributeMapping.keySet());
 
-        // Cast Set to String Array... cannot do this by .toArray() ??
-        String[] attrs = new String[queriedAttributesSet.size()];
-        int i = 0;
-        for (String attribute : queriedAttributesSet) {
-            attrs[i++] = attribute;
+        // Setting SearchControls
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        sc.setReturningObjFlag(true);
+        if (fetchDirectDn) {
+            String[] attrs = new String[1];
+            attrs[0] = "dn";
+            sc.setReturningAttributes(attrs);
+        } else {
+            String[] attrs = stringSetToArray(queriedAttributesSet);
+            sc.setReturningAttributes(attrs);
         }
 
-        sc.setReturningAttributes(attrs);
         if (log.isDebugEnabled()) {
             log.debug("afterPropertiesSet, set attributes to be queried : "
-                    + Arrays.toString(attrs)
+                    + Arrays.toString(stringSetToArray(queriedAttributesSet))
                     + (dnAttributeName == null ? ", no DN attribute created" : ", will add attribute [" + dnAttributeName
                             + "] to store user DN"));
         }
@@ -136,6 +167,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
 
     // Implements IPersonAttributeDao Interface
 
+    @SuppressWarnings("unchecked")
     @Override
     public ILockablePersonAttributes getPerson(String uid) {
 
@@ -148,16 +180,31 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
 
         try {
-            // Fetch person from directory
-            @SuppressWarnings("unchecked")
-            List<ILockablePersonAttributes> resultList = ldapTemplate.search(baseDN, localFilter, sc,
-                    new PersonAttributeMapper(uid));
 
-            if (resultList.isEmpty()) {
-                return null;
+            ILockablePersonAttributes result;
+
+            if (fetchDirectDn) {
+                List<String> userDN = ldapTemplate.search(baseDN, localFilter, sc, new DnFetcher());
+                if (userDN.isEmpty()) {
+                    return null;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("user DN found : " + userDN.get(0) + " fetching attributes");
+                }
+                result = (ILockablePersonAttributes) ldapTemplate.lookup(userDN.get(0), stringSetToArray(queriedAttributesSet),
+                        new PersonAttributeMapper(uid));
+
+            } else {
+                // Fetch person from directory
+                List<ILockablePersonAttributes> resultList = ldapTemplate.search(baseDN, localFilter, sc,
+                        new PersonAttributeMapper(uid));
+                if (resultList.isEmpty()) {
+                    return null;
+                }
+                result = resultList.get(0);
             }
+
             // Process attributes if needed
-            ILockablePersonAttributes result = resultList.get(0);
             if (result != null) {
                 Map<String, List<Object>> attrs = result.getAttributes();
                 for (IAttributesProcessor processor : processors) {
@@ -420,6 +467,16 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         this.ignorePartialResultException = ignorePartialResultException;
     }
 
+    public boolean isFetchDirectDn() {
+
+        return fetchDirectDn;
+    }
+
+    public void setFetchDirectDn(boolean fetchDirectDn) {
+
+        this.fetchDirectDn = fetchDirectDn;
+    }
+
     /**
      * Private DAO class which creates personAttributes from LDAP response
      * 
@@ -495,4 +552,40 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
     }
 
+    /**
+     * A simple ContextMapper to only fetch DN of result objects.
+     * 
+     * @author Philippe Marasse <philippe.marasse@laposte.net>
+     */
+    protected class DnFetcher implements ContextMapper {
+
+        @Override
+        public Object mapFromContext(Object ctx) {
+
+            DirContextAdapter context = (DirContextAdapter) ctx;
+            if (log.isDebugEnabled()) {
+                log.debug("Attributes returned by context : " + context.getAttributes().toString());
+            }
+
+            if (contextSourceBaseDN == null) {
+                return context.getDn().toString();
+            }
+
+            DistinguishedName dn = new DistinguishedName(contextSourceBaseDN);
+
+            if (dn.isEmpty()) {
+                return context.getDn().toString();
+            } else {
+                try {
+                    dn.addAll(context.getDn());
+                    return dn.toString();
+                } catch (InvalidNameException e) {
+                    // Unexpected... in this case, return only context DN
+                    return context.getDn().toString();
+                }
+            }
+
+        }
+
+    }
 }

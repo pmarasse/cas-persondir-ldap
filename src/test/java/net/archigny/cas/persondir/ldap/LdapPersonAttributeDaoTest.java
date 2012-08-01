@@ -27,7 +27,7 @@ public class LdapPersonAttributeDaoTest {
 
     private Logger             log     = LoggerFactory.getLogger(LdapPersonAttributeDaoTest.class);
 
-    private ContextSource  ldapCS;
+    private ContextSource      ldapCS;
 
     public final static String BASE_DN = "ou=comptes,dc=test,dc=archigny,dc=net";
 
@@ -37,9 +37,9 @@ public class LdapPersonAttributeDaoTest {
     public void setUp() throws Exception {
 
         log.info("Initialise l'application de test à partir du XML spring");
-    	ApplicationContext testApp = new ClassPathXmlApplicationContext("app-LdapPersonAttributeDaoTest.xml");
+        ApplicationContext testApp = new ClassPathXmlApplicationContext("app-LdapPersonAttributeDaoTest.xml");
         ldapCS = (ContextSource) testApp.getBean("searchContextSource");
-    	
+
         log.info("ldapCS Initialisée");
     }
 
@@ -313,10 +313,10 @@ public class LdapPersonAttributeDaoTest {
     }
 
     @Test
-    public void DnAttributeTest() {
+    public void dnAttributeTest() {
 
         log.info("DnAttributeTest : adding user DN in attributes");
-        
+
         LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
         ldapDAO.setContextSource(ldapCS);
         ldapDAO.setBaseDN(BASE_DN);
@@ -342,11 +342,11 @@ public class LdapPersonAttributeDaoTest {
         assertTrue(attrs.contains("cn"));
         assertTrue(attrs.contains("sn"));
         assertTrue(attrs.contains(DN_ATTR));
-        
+
         IPersonAttributes personAttributes = ldapDAO.getPerson("ghouse");
         System.out.println(personAttributes);
         assertNotNull(personAttributes);
-        
+
         assertEquals("House", personAttributes.getAttributeValue("sn"));
         assertEquals("ghouse", personAttributes.getAttributeValue("uid"));
 
@@ -358,8 +358,46 @@ public class LdapPersonAttributeDaoTest {
             e.printStackTrace();
             fail("Exception levée à la création d'un des LdapName ???");
         }
-        
-        
+
+    }
+
+    @Test
+    public void directFetchTest() {
+
+        log.info("directFetchTest : testing user fetch by directly querying user DN");
+
+        LdapPersonAttributeDao ldapDAO = new LdapPersonAttributeDao();
+        ldapDAO.setContextSource(ldapCS);
+        ldapDAO.setBaseDN(BASE_DN);
+        ldapDAO.setFetchDirectDn(true);
+
+        ArrayList<String> rawAttrs = new ArrayList<String>(3);
+        rawAttrs.add("cn");
+        rawAttrs.add("sn");
+        rawAttrs.add("uid");
+        rawAttrs.add("givenName");
+        rawAttrs.add("memberOf");
+        ldapDAO.setQueriedAttributes(rawAttrs);
+
+        HashMap<String, String> mapping = new HashMap<String, String>();
+        mapping.put("sn", "nom");
+        mapping.put("cn", "nomCommun");
+        mapping.put("givenName", "prenom");
+        ldapDAO.setResultAttributeMapping(mapping);
+
+        try {
+            ldapDAO.afterPropertiesSet();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception levée au AfterPropertiesSet");
+        }
+        IPersonAttributes personAttributes = ldapDAO.getPerson("lcuddy");
+        System.out.println(personAttributes);
+        assertNotNull(personAttributes);
+        assertEquals("Lisa", personAttributes.getAttributeValue("prenom"));
+        assertEquals("Cuddy", personAttributes.getAttributeValue("nom"));
+        assertEquals("lcuddy", personAttributes.getAttributeValue("uid"));
+
     }
 
 }
