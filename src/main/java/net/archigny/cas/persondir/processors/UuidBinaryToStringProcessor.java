@@ -49,25 +49,23 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
         if (targetAttribute == null) {
             throw new BeanCreationException("targetAttribute cannot be null");
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Bean validated, will " + (raiseIllegalFormatException ? "" : "not")
-                    + " raise an exception on illegal UUID format, and " + (deleteSourceAttribute ? "delete" : "preserve")
-                    + " source attribute");
-        }
+        log.debug("Bean validated, will " + (raiseIllegalFormatException ? "" : "not")
+                + " raise an exception on illegal UUID format, and " + (deleteSourceAttribute ? "delete" : "preserve")
+                + " source attribute");
     }
 
     @Override
-    public void processAttributes(Map<String, List<Object>> attributes) {
+    public void processAttributes(final Map<String, List<Object>> attributes) {
 
-        List<Object> source = attributes.get(sourceAttribute);
+        final List<Object> source = attributes.get(sourceAttribute);
 
         if ((source == null) || (source.isEmpty())) {
             return;
         }
 
-        List<Object> target = new ArrayList<Object>();
+        final List<Object> target = new ArrayList<Object>();
 
-        for (Object object : source) {
+        for (final Object object : source) {
             try {
                 if (object instanceof String) {
                     target.add(UuidToString(((String) object).getBytes()));
@@ -75,7 +73,7 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
                     target.add(UuidToString((byte[]) object));
                 }
             } catch (ClassCastException e) {
-                log.error("Unable to cast : " + object.getClass().getCanonicalName() + " to byte[]");
+                log.error("Unable to cast : {} to byte[]", object.getClass().getCanonicalName());
                 if (raiseIllegalFormatException) {
                     throw new IllegalArgumentException("object : " + object.toString() + " cannot be casted to byte[]");
                 }
@@ -94,17 +92,17 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
     @Override
     public Set<String> getPossibleUserAttributeNames() {
 
-        HashSet<String> attributeNames = new HashSet<String>();
+        final HashSet<String> attributeNames = new HashSet<String>();
 
         attributeNames.add(targetAttribute);
 
         return attributeNames;
     }
 
-    private String UuidToString(byte[] UuidBytes) {
+    private String UuidToString(final byte[] UuidBytes) {
 
         if (UuidBytes.length != UUID_LENGTH) {
-            log.error("UUID hase illegal length : " + UuidBytes.length + " expected : " + UUID_LENGTH);
+            log.error("UUID hase illegal length : {}, expected : {}", UuidBytes.length, UUID_LENGTH);
             if (raiseIllegalFormatException) {
                 throw new IllegalArgumentException("Uuid passed is not " + UUID_LENGTH + " bytes long !");
             }
@@ -112,7 +110,7 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
         }
 
         // Prepare the buffer
-        StringBuilder UuidString = new StringBuilder(UUID_LENGTH * 2 + 4);
+        final StringBuilder UuidString = new StringBuilder(UUID_LENGTH * 2 + 4);
         for (int i = 0; i < UUID_LENGTH; i++) {
             if (i == 4 || i == 6 || i == 8 || i == 10) {
                 UuidString.append("-");
@@ -131,7 +129,7 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
         return sourceAttribute;
     }
 
-    public void setSourceAttribute(String sourceAttribute) {
+    public void setSourceAttribute(final String sourceAttribute) {
 
         this.sourceAttribute = sourceAttribute;
     }
@@ -141,7 +139,7 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
         return targetAttribute;
     }
 
-    public void setTargetAttribute(String targetAttribute) {
+    public void setTargetAttribute(final String targetAttribute) {
 
         this.targetAttribute = targetAttribute;
     }
@@ -151,7 +149,7 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
         return raiseIllegalFormatException;
     }
 
-    public void setRaiseIllegalFormatException(boolean raiseIllegalFormatException) {
+    public void setRaiseIllegalFormatException(final boolean raiseIllegalFormatException) {
 
         this.raiseIllegalFormatException = raiseIllegalFormatException;
     }
@@ -161,7 +159,7 @@ public class UuidBinaryToStringProcessor implements IAttributesProcessor, Initia
         return deleteSourceAttribute;
     }
 
-    public void setDeleteSourceAttribute(boolean deleteSourceAttribute) {
+    public void setDeleteSourceAttribute(final boolean deleteSourceAttribute) {
 
         this.deleteSourceAttribute = deleteSourceAttribute;
     }

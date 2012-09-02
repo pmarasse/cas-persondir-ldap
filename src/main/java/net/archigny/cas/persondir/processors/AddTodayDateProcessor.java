@@ -15,11 +15,11 @@ import java.util.Set;
 public class AddTodayDateProcessor implements IAttributesProcessor {
 
     public static final String DATE_ATTRIBUTE_NAME = "date";
-    
-    @Override
-    public void processAttributes(Map<String, List<Object>> attributes) {
 
-        ArrayList<Object> dateAttribute = new ArrayList<Object>(1);
+    @Override
+    public void processAttributes(final Map<String, List<Object>> attributes) {
+
+        final ArrayList<Object> dateAttribute = new ArrayList<Object>(1);
         dateAttribute.add(new Date().toString());
         attributes.put(DATE_ATTRIBUTE_NAME, dateAttribute);
 

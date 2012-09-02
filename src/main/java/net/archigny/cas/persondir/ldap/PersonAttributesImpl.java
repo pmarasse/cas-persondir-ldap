@@ -26,7 +26,7 @@ public class PersonAttributesImpl implements ILockablePersonAttributes {
      * @param attributes
      *            HashMap des attributs;
      */
-    public PersonAttributesImpl(String name, Map<String, List<Object>> attributes) {
+    public PersonAttributesImpl(final String name, final Map<String, List<Object>> attributes) {
 
         this.name = name;
         this.attributes = attributes;
@@ -42,9 +42,9 @@ public class PersonAttributesImpl implements ILockablePersonAttributes {
 
         if (!locked) {
             // Lock Every collection of attribute values
-            Set<String> attrNames = attributes.keySet();
+            final Set<String> attrNames = attributes.keySet();
             for (String attrName : attrNames) {
-                List<Object> attrValues = attributes.get(attrName);
+                final List<Object> attrValues = attributes.get(attrName);
                 attributes.put(attrName,Collections.unmodifiableList(attrValues));
             }
             // Finally lock the main collection
@@ -73,7 +73,7 @@ public class PersonAttributesImpl implements ILockablePersonAttributes {
     }
 
     @Override
-    public Object getAttributeValue(String name) {
+    public Object getAttributeValue(final String name) {
 
         List<Object> values;
         if ((values = attributes.get(name)) != null) {
@@ -85,19 +85,19 @@ public class PersonAttributesImpl implements ILockablePersonAttributes {
     }
 
     @Override
-    public List<Object> getAttributeValues(String name) {
+    public List<Object> getAttributeValues(final String name) {
 
         return attributes.get(name);
     }
 
     // Getters and Setters
 
-    public void setName(String name) {
+    public void setName(final String name) {
 
         this.name = name;
     }
 
-    public void setAttributes(Map<String, List<Object>> attributes) {
+    public void setAttributes(final Map<String, List<Object>> attributes) {
 
         this.attributes = attributes;
     }

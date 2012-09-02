@@ -37,32 +37,26 @@ public class RegexValueDelete implements IAttributesProcessor, InitializingBean 
     private Pattern valuePattern;
 
     @Override
-    public void processAttributes(Map<String, List<Object>> attributes) {
+    public void processAttributes(final Map<String, List<Object>> attributes) {
 
-        Set<String> attributeNames = attributes.keySet();
-        for (String attributeName : attributeNames) {
-            if (log.isDebugEnabled()) {
-                log.debug("Considering attribute name : " + attributeName);
-            }
+        final Set<String> attributeNames = attributes.keySet();
+        for (final String attributeName : attributeNames) {
+            log.debug("Considering attribute name : {}", attributeName);
             if (attributeName.equalsIgnoreCase(key)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Attribute found, searching values to delete");
-                }
-                List<Object> values = attributes.get(attributeName);
-                List<Object> valuesToDelete = new ArrayList<Object>();
+                log.debug("Attribute found, searching values to delete");
+                final List<Object> values = attributes.get(attributeName);
+                final List<Object> valuesToDelete = new ArrayList<Object>();
 
-                int size = values.size();
+                final int size = values.size();
                 for (int i = 0; i < size; i++) {
-                    Object value = values.get(i);
+                    final Object value = values.get(i);
                     if (value instanceof String) {
                         if (valuePattern.matcher(((String) value)).matches()) {
                             valuesToDelete.add(value);
                         }
                     }
                 }
-                if (log.isDebugEnabled()) {
-                    log.debug(valuesToDelete.size() + " values found to be deleted");
-                }
+                log.debug("{} values found to be deleted", valuesToDelete.size());
                 if (!valuesToDelete.isEmpty()) {
                     try {
                         values.removeAll(valuesToDelete);
@@ -74,9 +68,7 @@ public class RegexValueDelete implements IAttributesProcessor, InitializingBean 
                 }
                 break;
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Attribute does not match.");
-                }
+                log.debug("Attribute does not match.");
             }
         }
 
@@ -106,9 +98,7 @@ public class RegexValueDelete implements IAttributesProcessor, InitializingBean 
         } else {
             valuePattern = Pattern.compile(valueMatch, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Configured for attribute name : [" + key + "] / values match [" + valueMatch + "] ");
-        }
+        log.debug("Configured for attribute name : [{}] / values match [{}]", key, valueMatch);
 
     }
 
@@ -119,7 +109,7 @@ public class RegexValueDelete implements IAttributesProcessor, InitializingBean 
         return key;
     }
 
-    public void setKey(String key) {
+    public void setKey(final String key) {
 
         this.key = key;
     }
@@ -129,7 +119,7 @@ public class RegexValueDelete implements IAttributesProcessor, InitializingBean 
         return valueMatch;
     }
 
-    public void setValueMatch(String valueMatch) {
+    public void setValueMatch(final String valueMatch) {
 
         this.valueMatch = valueMatch;
     }
@@ -139,7 +129,7 @@ public class RegexValueDelete implements IAttributesProcessor, InitializingBean 
         return caseSensitive;
     }
 
-    public void setCaseSensitive(boolean caseSensitive) {
+    public void setCaseSensitive(final boolean caseSensitive) {
 
         this.caseSensitive = caseSensitive;
     }

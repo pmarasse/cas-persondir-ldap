@@ -112,14 +112,14 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      *            Set to convert
      * @return array of data
      */
-    protected String[] stringSetToArray(Set<String> dataSet) {
+    protected String[] stringSetToArray(final Set<String> dataSet) {
 
         if (dataSet == null) {
             return null;
         }
 
         // Cast Set to String Array... cannot do this by .toArray() ??
-        String[] dataArray = new String[dataSet.size()];
+        final String[] dataArray = new String[dataSet.size()];
         int i = 0;
         for (String data : dataSet) {
             dataArray[i++] = data;
@@ -169,19 +169,19 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
 
     @SuppressWarnings("unchecked")
     @Override
-    public ILockablePersonAttributes getPerson(String uid) {
+    public ILockablePersonAttributes getPerson(final String uid) {
 
-        Matcher queryMatcher = QUERY_PLACEHOLDER.matcher(ldapFilter);
-        String localFilter = queryMatcher.replaceAll(uid);
+        final Matcher queryMatcher = QUERY_PLACEHOLDER.matcher(ldapFilter);
+        final String localFilter = queryMatcher.replaceAll(uid);
 
         if (log.isDebugEnabled()) {
-            log.debug("getPerson SearchFilter : " + localFilter);
-            log.debug("getPerson Attributes queried : " + Arrays.toString(sc.getReturningAttributes()));
+            log.debug("getPerson SearchFilter : {}", localFilter);
+            log.debug("getPerson Attributes queried : {}", Arrays.toString(sc.getReturningAttributes()));
         }
 
         try {
 
-            ILockablePersonAttributes result;
+            final ILockablePersonAttributes result;
 
             if (fetchDirectDn) {
                 List<String> userDN = ldapTemplate.search(baseDN, localFilter, sc, new DnFetcher());
@@ -206,7 +206,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
 
             // Process attributes if needed
             if (result != null) {
-                Map<String, List<Object>> attrs = result.getAttributes();
+                final Map<String, List<Object>> attrs = result.getAttributes();
                 for (IAttributesProcessor processor : processors) {
                     processor.processAttributes(attrs);
                 }
@@ -216,9 +216,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
             return result;
 
         } catch (NameNotFoundException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(e.getMessage());
-            }
+            log.debug("Catched while retrieving result : {}", e.getMessage());
             return null;
         }
     }
@@ -227,7 +225,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      * As this implementation does not support parametrized query other than simple ldap filter
      */
     @Override
-    public Set<IPersonAttributes> getPeople(Map<String, Object> query) {
+    public Set<IPersonAttributes> getPeople(final Map<String, Object> query) {
 
         return null;
     }
@@ -236,7 +234,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      * Method not implemented... so returning null.
      */
     @Override
-    public Set<IPersonAttributes> getPeopleWithMultivaluedAttributes(Map<String, List<Object>> query) {
+    public Set<IPersonAttributes> getPeopleWithMultivaluedAttributes(final Map<String, List<Object>> query) {
 
         return null;
     }
@@ -265,10 +263,10 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("possible AttributeNames Set before processors : " + Arrays.toString(possibleAttributenames.toArray()));
+            log.debug("possible AttributeNames Set before processors : {}", Arrays.toString(possibleAttributenames.toArray()));
         }
         for (IAttributesProcessor processor : processors) {
-            Set<String> processorAttributeNames = processor.getPossibleUserAttributeNames();
+            final Set<String> processorAttributeNames = processor.getPossibleUserAttributeNames();
             if (processorAttributeNames != null) {
                 possibleAttributenames.addAll(processorAttributeNames);
             }
@@ -282,7 +280,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("returning AttributeNames Set : " + Arrays.toString(possibleAttributenames.toArray()));
+            log.debug("returning AttributeNames Set : {} ", Arrays.toString(possibleAttributenames.toArray()));
         }
 
         return possibleAttributenames;
@@ -303,7 +301,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      */
     @Override
     @Deprecated
-    public Map<String, List<Object>> getMultivaluedUserAttributes(Map<String, List<Object>> seed) {
+    public Map<String, List<Object>> getMultivaluedUserAttributes(final Map<String, List<Object>> seed) {
 
         throw new UnsupportedOperationException("This method is deprecated and not implemented in this class");
     }
@@ -313,7 +311,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      */
     @Override
     @Deprecated
-    public Map<String, List<Object>> getMultivaluedUserAttributes(String uid) {
+    public Map<String, List<Object>> getMultivaluedUserAttributes(final String uid) {
 
         throw new UnsupportedOperationException("This method is deprecated and not implemented in this class");
     }
@@ -323,7 +321,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      */
     @Override
     @Deprecated
-    public Map<String, Object> getUserAttributes(Map<String, Object> seed) {
+    public Map<String, Object> getUserAttributes(final Map<String, Object> seed) {
 
         throw new UnsupportedOperationException("This method is deprecated and not implemented in this class");
     }
@@ -333,7 +331,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
      */
     @Override
     @Deprecated
-    public Map<String, Object> getUserAttributes(String uid) {
+    public Map<String, Object> getUserAttributes(final String uid) {
 
         throw new UnsupportedOperationException("This method is deprecated and not implemented in this class");
     }
@@ -345,7 +343,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return contextSource;
     }
 
-    public void setContextSource(ContextSource contextSource) {
+    public void setContextSource(final ContextSource contextSource) {
 
         if (contextSource == null) {
             throw new IllegalArgumentException("contextSource cannot be null");
@@ -359,7 +357,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return resultAttributeMapping;
     }
 
-    public void setResultAttributeMapping(Map<String, String> resultAttributeMapping) {
+    public void setResultAttributeMapping(final Map<String, String> resultAttributeMapping) {
 
         if (resultAttributeMapping == null) {
             throw new IllegalArgumentException("resultAttributeMapping cannot be null");
@@ -373,7 +371,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return ldapFilter;
     }
 
-    public void setLdapFilter(String ldapFilter) {
+    public void setLdapFilter(final String ldapFilter) {
 
         if (ldapFilter == null) {
             throw new IllegalArgumentException("ldapFilter cannot be null");
@@ -388,7 +386,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return (baseDN == null ? "" : baseDN.toString());
     }
 
-    public void setBaseDN(String baseDN) {
+    public void setBaseDN(final String baseDN) {
 
         if (baseDN == null) {
             throw new IllegalArgumentException("baseDN cannot be null");
@@ -407,7 +405,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return (contextSourceBaseDN == null ? "" : contextSourceBaseDN.toString());
     }
 
-    public void setContextSourceBaseDN(String contextSourceBaseDN) {
+    public void setContextSourceBaseDN(final String contextSourceBaseDN) {
 
         if (contextSourceBaseDN == null) {
             throw new IllegalArgumentException("contextSourceBaseDN cannot be null");
@@ -425,7 +423,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return queriedAttributes;
     }
 
-    public void setQueriedAttributes(List<String> queriedAttributes) {
+    public void setQueriedAttributes(final List<String> queriedAttributes) {
 
         if (queriedAttributes == null) {
             throw new IllegalArgumentException("queriedAttributes cannot be null");
@@ -439,7 +437,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return processors;
     }
 
-    public void setProcessors(List<IAttributesProcessor> processors) {
+    public void setProcessors(final List<IAttributesProcessor> processors) {
 
         if (processors == null) {
             throw new IllegalArgumentException("processors list cannot be null");
@@ -452,7 +450,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return dnAttributeName;
     }
 
-    public void setDnAttributeName(String dnAttributeName) {
+    public void setDnAttributeName(final String dnAttributeName) {
 
         this.dnAttributeName = dnAttributeName;
     }
@@ -462,7 +460,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return ignorePartialResultException;
     }
 
-    public void setIgnorePartialResultException(boolean ignorePartialResultException) {
+    public void setIgnorePartialResultException(final boolean ignorePartialResultException) {
 
         this.ignorePartialResultException = ignorePartialResultException;
     }
@@ -472,7 +470,7 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         return fetchDirectDn;
     }
 
-    public void setFetchDirectDn(boolean fetchDirectDn) {
+    public void setFetchDirectDn(final boolean fetchDirectDn) {
 
         this.fetchDirectDn = fetchDirectDn;
     }
@@ -495,12 +493,12 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
         @Override
         public Object mapFromContext(Object ctx) {
 
-            DirContextAdapter context = (DirContextAdapter) ctx;
+            final DirContextAdapter context = (DirContextAdapter) ctx;
             if (log.isDebugEnabled()) {
-                log.debug("Attributes returned by context : " + context.getAttributes().toString());
-                log.debug("Processing queried attributes : " + Arrays.toString(queriedAttributesSet.toArray()));
+                log.debug("Attributes returned by context : {}", context.getAttributes().toString());
+                log.debug("Processing queried attributes : {}", Arrays.toString(queriedAttributesSet.toArray()));
             }
-            Map<String, List<Object>> personAttrsMap = new HashMap<String, List<Object>>();
+            final Map<String, List<Object>> personAttrsMap = new HashMap<String, List<Object>>();
             String targetAttribute;
             List<Object> valuesToAdd;
 
@@ -510,11 +508,11 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
 
                 if (contextSourceBaseDN != null) {
 
-                    DistinguishedName objectDN = new DistinguishedName(contextSourceBaseDN);
+                    final DistinguishedName objectDN = new DistinguishedName(contextSourceBaseDN);
 
                     try {
                         if (log.isDebugEnabled()) {
-                            log.debug("Trying to add " + context.getDn().toString() + " to " + objectDN.toString());
+                            log.debug("Trying to add {}  to {}", context.getDn().toString(), objectDN.toString());
                         }
                         objectDN.addAll(context.getDn());
                         objectDNString = objectDN.toString();
@@ -528,15 +526,15 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
                     log.debug("Adding computed DN attribute name [" + dnAttributeName + "], value [" + objectDNString + "]");
                 }
 
-                List<Object> valuesDN = new ArrayList<Object>(1);
+                final List<Object> valuesDN = new ArrayList<Object>(1);
                 valuesDN.add(objectDNString);
                 personAttrsMap.put(dnAttributeName, valuesDN);
             }
 
-            for (String attribute : queriedAttributesSet) {
+            for (final String attribute : queriedAttributesSet) {
                 Object[] values = context.getObjectAttributes(attribute);
                 if (log.isDebugEnabled()) {
-                    log.debug("Attribute : " + attribute + " values : " + Arrays.toString(values));
+                    log.debug("Attribute : {}  values : {}", attribute, Arrays.toString(values));
                 }
                 if (values != null) {
                     valuesToAdd = new ArrayList<Object>();
@@ -560,18 +558,18 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     protected class DnFetcher implements ContextMapper {
 
         @Override
-        public Object mapFromContext(Object ctx) {
+        public Object mapFromContext(final Object ctx) {
 
-            DirContextAdapter context = (DirContextAdapter) ctx;
+            final DirContextAdapter context = (DirContextAdapter) ctx;
             if (log.isDebugEnabled()) {
-                log.debug("Attributes returned by context : " + context.getAttributes().toString());
+                log.debug("Attributes returned by context : {}", context.getAttributes().toString());
             }
 
             if (contextSourceBaseDN == null) {
                 return context.getDn().toString();
             }
 
-            DistinguishedName dn = new DistinguishedName(contextSourceBaseDN);
+            final DistinguishedName dn = new DistinguishedName(contextSourceBaseDN);
 
             if (dn.isEmpty()) {
                 return context.getDn().toString();

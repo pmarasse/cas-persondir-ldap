@@ -38,30 +38,24 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
     private Pattern valuePattern;
 
     @Override
-    public void processAttributes(Map<String, List<Object>> attributes) {
+    public void processAttributes(final Map<String, List<Object>> attributes) {
 
-        Set<String> attributeNames = attributes.keySet();
-        for (String attributeName : attributeNames) {
-            if (log.isDebugEnabled()) {
-                log.debug("Considering attribute name : " + attributeName);
-            }
+        final Set<String> attributeNames = attributes.keySet();
+        for (final String attributeName : attributeNames) {
+            log.debug("Considering attribute name : {}", attributeName);
             if (attributeName.equalsIgnoreCase(key)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Attribute found, applying value replacements");
-                }
-                List<Object> values = attributes.get(attributeName);
+                log.debug("Attribute found, applying value replacements");
+                final List<Object> values = attributes.get(attributeName);
                 int size = values.size();
                 for (int i = 0; i < size; i++) {
-                    Object value = values.get(i);
+                    final Object value = values.get(i);
                     if (value instanceof String) {
                         values.set(i, valuePattern.matcher(((String) value)).replaceAll(valueReplace));
                     }
                 }
                 break;
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Attribute does not match.");
-                }
+                log.debug("Attribute does not match.");
             }
         }
 
@@ -94,10 +88,8 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
         } else {
             valuePattern = Pattern.compile(valueMatch, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Configured to match attribute name : [" + key + "] / values match [" + valueMatch + "] replacement : ["
-                    + valueReplace + "]");
-        }
+        log.debug("Configured to match attribute name : [{}] / values match [{}] replacement : [{}]", new Object[] { key,
+                valueMatch, valueReplace });
 
     }
 
@@ -108,7 +100,7 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
         return key;
     }
 
-    public void setKey(String key) {
+    public void setKey(final String key) {
 
         this.key = key;
     }
@@ -118,7 +110,7 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
         return valueMatch;
     }
 
-    public void setValueMatch(String valueMatch) {
+    public void setValueMatch(final String valueMatch) {
 
         this.valueMatch = valueMatch;
     }
@@ -128,7 +120,7 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
         return valueReplace;
     }
 
-    public void setValueReplace(String valueReplace) {
+    public void setValueReplace(final String valueReplace) {
 
         this.valueReplace = valueReplace;
     }
@@ -138,7 +130,7 @@ public class RegexValueReplace implements IAttributesProcessor, InitializingBean
         return caseSensitive;
     }
 
-    public void setCaseSensitive(boolean caseSensitive) {
+    public void setCaseSensitive(final boolean caseSensitive) {
 
         this.caseSensitive = caseSensitive;
     }

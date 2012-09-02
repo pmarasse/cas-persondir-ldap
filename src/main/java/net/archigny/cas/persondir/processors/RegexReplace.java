@@ -37,27 +37,21 @@ public class RegexReplace implements IAttributesProcessor, InitializingBean {
     @Override
     public void processAttributes(final Map<String, List<Object>> attributes) {
 
-        Set<String> attributeNames = attributes.keySet();
-        for (String attributeName : attributeNames) {
-            if (log.isDebugEnabled()) {
-                log.debug("Considering attribute name : " + attributeName);
-            }
+        final Set<String> attributeNames = attributes.keySet();
+        for (final String attributeName : attributeNames) {
+            log.debug("Considering attribute name : ", attributeName);
             if (keyPattern.matcher(attributeName).find()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Attribute matches, applying value replacements");
-                }
-                List<Object> values = attributes.get(attributeName);
+                log.debug("Attribute matches, applying value replacements");
+                final List<Object> values = attributes.get(attributeName);
                 int size = values.size();
                 for (int i = 0; i < size; i++) {
-                    Object value = values.get(i);
+                    final Object value = values.get(i);
                     if (value instanceof String) {
                         values.set(i, valuePattern.matcher(((String) value)).replaceAll(valueReplace));
                     }
                 }
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Attribute does not match.");
-                }
+                log.debug("Attribute does not match.");
             }
         }
     }
@@ -86,10 +80,8 @@ public class RegexReplace implements IAttributesProcessor, InitializingBean {
         // Validate patterns.
         keyPattern = Pattern.compile(keyMatch);
         valuePattern = Pattern.compile(valueMatch);
-        if (log.isDebugEnabled()) {
-            log.debug("Configured to match attribute names : [" + keyMatch + "] / values match [" + valueMatch
-                    + "] replacement : [" + valueReplace + "]");
-        }
+        log.debug("Configured to match attribute names : [{}] / values match [{}] replacement : [{}]", new Object[] { keyMatch,
+                valueMatch, valueReplace });
     }
 
     // Getters and setters
@@ -99,7 +91,7 @@ public class RegexReplace implements IAttributesProcessor, InitializingBean {
         return keyMatch;
     }
 
-    public void setKeyMatch(String keyMatch) {
+    public void setKeyMatch(final String keyMatch) {
 
         this.keyMatch = keyMatch;
     }
@@ -109,7 +101,7 @@ public class RegexReplace implements IAttributesProcessor, InitializingBean {
         return valueMatch;
     }
 
-    public void setValueMatch(String valueMatch) {
+    public void setValueMatch(final String valueMatch) {
 
         this.valueMatch = valueMatch;
     }
@@ -119,7 +111,7 @@ public class RegexReplace implements IAttributesProcessor, InitializingBean {
         return valueReplace;
     }
 
-    public void setValueReplace(String valueReplace) {
+    public void setValueReplace(final String valueReplace) {
 
         this.valueReplace = valueReplace;
     }
