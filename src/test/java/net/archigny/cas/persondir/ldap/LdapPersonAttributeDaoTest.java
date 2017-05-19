@@ -14,7 +14,7 @@ import javax.naming.ldap.LdapName;
 import net.archigny.cas.persondir.processors.AddTodayDateProcessor;
 import net.archigny.cas.persondir.processors.IAttributesProcessor;
 
-import org.jasig.services.persondir.IPersonAttributes;
+import org.apereo.services.persondir.IPersonAttributes;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;

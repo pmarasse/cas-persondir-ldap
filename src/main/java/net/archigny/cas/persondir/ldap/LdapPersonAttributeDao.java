@@ -17,8 +17,8 @@ import javax.naming.ldap.LdapName;
 
 import net.archigny.cas.persondir.processors.IAttributesProcessor;
 
-import org.jasig.services.persondir.IPersonAttributeDao;
-import org.jasig.services.persondir.IPersonAttributes;
+import org.apereo.services.persondir.IPersonAttributeDao;
+import org.apereo.services.persondir.IPersonAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanCreationException;
@@ -334,6 +334,13 @@ public class LdapPersonAttributeDao implements IPersonAttributeDao, Initializing
     public Map<String, Object> getUserAttributes(final String uid) {
 
         throw new UnsupportedOperationException("This method is deprecated and not implemented in this class");
+    }
+
+    @Override
+    public int compareTo(IPersonAttributeDao o) {
+    
+        // TODO Auto-generated method stub
+        return 0;
     }
 
     // Setters and getters

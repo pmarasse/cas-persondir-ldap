@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * Simple Interface for attributes processors.
  * 
- * @author Philippe Marasse <philippe@archigny.net>
+ * @author Philippe Marasse
  * 
  */
 public interface IAttributesProcessor {
@@ -23,7 +23,7 @@ public interface IAttributesProcessor {
     /**
      * Get the set of attributes added by this processor
      * 
-     * @return Set of the attrbutes names that can be added by the processor - null or empty set if no name is added
+     * @return Set of the attributes names that can be added by the processor - null or empty set if no name is added
      */
     public Set<String> getPossibleUserAttributeNames();
 

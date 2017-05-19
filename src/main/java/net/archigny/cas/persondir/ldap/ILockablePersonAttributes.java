@@ -1,6 +1,6 @@
 package net.archigny.cas.persondir.ldap;
 
-import org.jasig.services.persondir.IPersonAttributes;
+import org.apereo.services.persondir.IPersonAttributes;
 
 
 public interface ILockablePersonAttributes extends IPersonAttributes {
